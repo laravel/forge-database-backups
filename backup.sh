@@ -6,17 +6,6 @@ BACKUP_STATUS=0
 SCRIPT_STARTED_AT=$(date -u +"%Y-%m-%d %H:%M:%S")
 BACKUP_ARCHIVE=backup-$BACKUP_ID-$(date +%Y%m%d%H%M%S).tar.gz
 
-notify_forge () {
-    curl -s --request POST \
-        --url "$FORGE_PING_BACKUP" \
-        --data-urlencode "type=backup" \
-        --data-urlencode "backup_token=$BACKUP_TOKEN" \
-        --data-urlencode "status=$1" \
-        --data-urlencode "backup_id=$BACKUP_ID" \
-        --data-urlencode "archive=${BACKUP_FULL_STORAGE_PATH}${BACKUP_ARCHIVE}" \
-        --data-urlencode "started_at=$SCRIPT_STARTED_AT"
-}
-
 # Change To Tmp Directory
 
 cd /tmp
@@ -94,6 +83,4 @@ then
     done
 fi
 
-# Notify Forge
-
-notify_forge $BACKUP_STATUS
+exit $BACKUP_STATUS
