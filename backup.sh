@@ -84,8 +84,6 @@ then
             | awk '{print $4}'
     )
 
-    echo $CURRENT_BACKUPS
-
     BACKUPS_TO_PRUNE=$(printf '%s' "$CURRENT_BACKUPS" | head -n -$BACKUP_RETENTION)
 
     for BACKUP in $BACKUPS_TO_PRUNE; do
