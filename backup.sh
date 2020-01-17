@@ -1,9 +1,6 @@
 #!/bin/sh
 
-# Script Variables
-
 BACKUP_STATUS=0
-BACKUP_ARCHIVE=backup-$BACKUP_ID-$(date +%Y%m%d%H%M%S).tar.gz
 
 # Change To Tmp Directory
 
