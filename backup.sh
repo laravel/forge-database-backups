@@ -6,7 +6,7 @@ BACKUP_STATUS=0
 
 cd /tmp
 
-# Run Different Script For Drivers
+# Run The Correct Backup Script For Each Database Driver
 
 if [[ $SERVER_DATABASE_DRIVER == 'mysql' ]]
 then
@@ -65,7 +65,7 @@ then
     CURRENT_BACKUPS=$(
         aws s3 ls $BACKUP_FULL_STORAGE_PATH \
             --profile=$BACKUP_AWS_PROFILE_NAME \
-            ${BACKUP_AWS_ENDPOINT:+ --endpoint=$BACKUP_AWS_ENDPOINT}\
+            ${BACKUP_AWS_ENDPOINT:+ --endpoint=$BACKUP_AWS_ENDPOINT} \
             | awk '{print $4}'
     )
 
@@ -75,7 +75,6 @@ then
         aws s3 rm "${BACKUP_FULL_STORAGE_PATH}${BACKUP}" \
             --profile=$BACKUP_AWS_PROFILE_NAME \
             ${BACKUP_AWS_ENDPOINT:+ --endpoint=$BACKUP_AWS_ENDPOINT}
-
     done
 fi
 
