@@ -11,7 +11,7 @@ cd /tmp
 if [[ $SERVER_DATABASE_DRIVER == 'mysql' ]]
 then
 
-    for DATABASE in $DATABASES; do
+    for DATABASE in $BACKUP_DATABASES; do
         mysqldump \
             --user=root \
             --password=$SERVER_DATABASE_PASSWORD \
@@ -21,7 +21,7 @@ then
 
 elif [[ $SERVER_DATABASE_DRIVER == 'pgsql' ]]
 then
-    for DATABASE in $DATABASES; do
+    for DATABASE in $BACKUP_DATABASES; do
         sudo -u postgres pg_dump --clean -F p $DATABASE > $DATABASE.sql
     done
 fi
