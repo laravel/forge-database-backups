@@ -3,7 +3,6 @@
 # Script Variables
 
 BACKUP_STATUS=0
-SCRIPT_STARTED_AT=$(date -u +"%Y-%m-%d %H:%M:%S")
 BACKUP_ARCHIVE=backup-$BACKUP_ID-$(date +%Y%m%d%H%M%S).tar.gz
 
 # Change To Tmp Directory
