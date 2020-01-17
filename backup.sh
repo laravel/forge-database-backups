@@ -13,8 +13,8 @@ then
 
     for DATABASE in $DATABASES; do
         mysqldump \
-            --user root \
-            --password $SERVER_DATABASE_PASSWORD \
+            --user=root \
+            --password=$SERVER_DATABASE_PASSWORD \
             --single-transaction \
             $DATABASE > $DATABASE.sql
     done
