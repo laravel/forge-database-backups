@@ -40,12 +40,11 @@ then
         --profile=$BACKUP_AWS_PROFILE_NAME \
         ${BACKUP_AWS_ENDPOINT:+ --endpoint=$BACKUP_AWS_ENDPOINT}
 
+    # Set A Failed Status
+
     if [ $? -ne 0 ]
     then
         echo "There was an error uploading the backup archive..."
-    else
-        # Set Successful Status
-
         BACKUP_STATUS=1
     fi
 
@@ -58,7 +57,7 @@ fi
 
 # Prune Old Backups
 
-if [ $BACKUP_STATUS -eq 1 ]
+if [ $BACKUP_STATUS -eq 0 ]
 then
     echo "Pruning backups..."
 
