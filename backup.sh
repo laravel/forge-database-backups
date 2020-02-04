@@ -55,26 +55,4 @@ else
     echo "Backup archive could not be created..."
 fi
 
-# Prune Old Backups
-
-if [ $BACKUP_STATUS -eq 0 ]
-then
-    echo "Pruning backups..."
-
-    CURRENT_BACKUPS=$(
-        aws s3 ls $BACKUP_FULL_STORAGE_PATH \
-            --profile=$BACKUP_AWS_PROFILE_NAME \
-            ${BACKUP_AWS_ENDPOINT:+ --endpoint=$BACKUP_AWS_ENDPOINT} \
-            | awk '{print $4}'
-    )
-
-    BACKUPS_TO_PRUNE=$(printf '%s' "$CURRENT_BACKUPS" | head -n -$BACKUP_RETENTION)
-
-    for BACKUP in $BACKUPS_TO_PRUNE; do
-        aws s3 rm "${BACKUP_FULL_STORAGE_PATH}${BACKUP}" \
-            --profile=$BACKUP_AWS_PROFILE_NAME \
-            ${BACKUP_AWS_ENDPOINT:+ --endpoint=$BACKUP_AWS_ENDPOINT}
-    done
-fi
-
 exit $BACKUP_STATUS
