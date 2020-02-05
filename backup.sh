@@ -4,6 +4,8 @@ set -e
 
 BACKUP_STATUS=0
 
+exit 1
+
 # Change To Tmp Directory
 
 cd /tmp
