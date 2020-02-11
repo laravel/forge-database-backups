@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -e
+
 BACKUP_STATUS=0
 
 # Change To Tmp Directory
