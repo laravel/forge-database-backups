@@ -28,9 +28,9 @@ then
     done
 fi
 
-# Add SQL Dumps To Archive And Remove Them Afterwards
+# Add SQL Dump To Archive And Remove It Afterwards
 
-find . -name "*.sql" | tar -czvf $BACKUP_ARCHIVE --remove-files -T -
+tar -czvf $BACKUP_ARCHIVE --remove-files $BACKUP_DATABASES.sql
 
 # Upload The Archived File
 
