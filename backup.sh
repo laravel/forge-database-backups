@@ -30,7 +30,7 @@ fi
 
 # Add SQL Dump To Archive And Remove It Afterwards
 
-tar -czvf $BACKUP_ARCHIVE --remove-files --exclude=$BACKUP_DATABASES.sql $BACKUP_DATABASES.sql
+tar -czvf $BACKUP_ARCHIVE --remove-files $BACKUP_DATABASES.sql
 
 # Upload The Archived File
 
