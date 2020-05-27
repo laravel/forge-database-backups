@@ -8,6 +8,10 @@ BACKUP_STATUS=0
 
 cd /tmp
 
+# Make A Temporary Backup Directory
+
+mkdir -p /tmp/forge-backups/$BACKUP_ID
+
 # Run The Correct Backup Script For Each Database Driver
 
 if [[ $SERVER_DATABASE_DRIVER == 'mysql' ]]
@@ -18,19 +22,23 @@ then
             --user=root \
             --password=$SERVER_DATABASE_PASSWORD \
             --single-transaction \
-            $DATABASE > $DATABASE.sql
+            $DATABASE > /tmp/forge-backups/$BACKUP_ID/$DATABASE.sql
     done
 
 elif [[ $SERVER_DATABASE_DRIVER == 'pgsql' ]]
 then
     for DATABASE in $BACKUP_DATABASES; do
-        sudo -u postgres pg_dump --clean -F p $DATABASE > $DATABASE.sql
+        sudo -u postgres pg_dump --clean -F p $DATABASE > /tmp/forge-backups/$BACKUP_ID/$DATABASE.sql
     done
 fi
 
 # Add SQL Dump To Archive And Remove It Afterwards
 
-tar -czvf $BACKUP_ARCHIVE --remove-files $BACKUP_DATABASES.sql
+tar -czvf $BACKUP_ARCHIVE --remove-files -C /tmp/forge-backups/$BACKUP_ID $BACKUP_DATABASES.sql
+
+# Remove The Temp Directory
+
+rm -rf /tmp/forge-backups/$BACKUP_ID
 
 # Upload The Archived File
 
