@@ -34,7 +34,7 @@ fi
 
 # Add SQL Dump To Archive And Remove It Afterwards
 
-tar -czvf $BACKUP_ARCHIVE --remove-files -C /tmp/forge-backups/$BACKUP_ID $BACKUP_DATABASES.sql
+tar -czvf $BACKUP_ARCHIVE --remove-files -C /tmp/forge-backups/$BACKUP_ID/ .
 
 # Remove The Temp Directory
 
