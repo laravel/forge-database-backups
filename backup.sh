@@ -35,8 +35,12 @@ for DATABASE in $BACKUP_DATABASES; do
             ${BACKUP_AWS_ENDPOINT:+ --endpoint=$BACKUP_AWS_ENDPOINT}
     fi
 
-    echo "Output\n"
-    echo $?
+    # Check Exit Code Of Backup
+
+    if [[ $? -gt 0 ]];
+    then
+        exit 1
+    fi
 
     # Get The Size Of This File And Store It
 
@@ -44,6 +48,13 @@ for DATABASE in $BACKUP_DATABASES; do
         --profile=$BACKUP_AWS_PROFILE_NAME \
         ${BACKUP_AWS_ENDPOINT:+ --endpoint=$BACKUP_AWS_ENDPOINT} | \
         awk '{print $3}')
+
+    # Check Exit Code Of Listing
+
+    if [[ $? -gt 0 ]];
+    then
+        exit 1
+    fi
 
     BACKUP_ARCHIVES+=($BACKUP_ARCHIVE_NAME $BACKUP_ARCHIVE_SIZE)
 done
