@@ -14,7 +14,7 @@ for DATABASE in $BACKUP_DATABASES; do
 
     if [[ $SERVER_DATABASE_DRIVER == 'mysql' ]]
     then
-        STATUS=$(mysqldump \
+        mysqldump \
             --user=root \
             --password=$SERVER_DATABASE_PASSWORD \
             --single-transaction \
@@ -23,18 +23,20 @@ for DATABASE in $BACKUP_DATABASES; do
             gzip -c | \
             aws s3 cp - $BACKUP_ARCHIVE_PATH \
             --profile=$BACKUP_AWS_PROFILE_NAME \
-            ${BACKUP_AWS_ENDPOINT:+ --endpoint=$BACKUP_AWS_ENDPOINT})
+            ${BACKUP_AWS_ENDPOINT:+ --endpoint=$BACKUP_AWS_ENDPOINT}
+        STATUS=$?
     elif [[ $SERVER_DATABASE_DRIVER == 'pgsql' ]]
     then
         # The postgres user cannot access /root/.backups, so switch to /tmp
 
         cd /tmp
 
-        STATUS=$(sudo -u postgres pg_dump --clean --create -F p $DATABASE | \
+        sudo -u postgres pg_dump --clean --create -F p $DATABASE | \
         gzip -c | \
         aws s3 cp - $BACKUP_ARCHIVE_PATH \
             --profile=$BACKUP_AWS_PROFILE_NAME \
-            ${BACKUP_AWS_ENDPOINT:+ --endpoint=$BACKUP_AWS_ENDPOINT})
+            ${BACKUP_AWS_ENDPOINT:+ --endpoint=$BACKUP_AWS_ENDPOINT}
+        STATUS=$?
     fi
 
     # Check Exit Code Of Backup
@@ -55,9 +57,11 @@ for DATABASE in $BACKUP_DATABASES; do
         ${BACKUP_AWS_ENDPOINT:+ --endpoint=$BACKUP_AWS_ENDPOINT} | \
         awk '{print $3}')
 
+    STATUS=$?
+
     # Check Exit Code Of Listing
 
-    if [[ $? -gt 0 ]];
+    if [[ $STATUS -gt 0 ]];
     then
         BACKUP_STATUS=1
 
