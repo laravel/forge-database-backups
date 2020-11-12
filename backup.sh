@@ -26,6 +26,8 @@ for DATABASE in $BACKUP_DATABASES; do
             ${BACKUP_AWS_ENDPOINT:+ --endpoint=$BACKUP_AWS_ENDPOINT}
     elif [[ $SERVER_DATABASE_DRIVER == 'pgsql' ]]
     then
+        # The postgres user cannot access /root/.backups, so switch to /tmp
+
         cd /tmp
 
         sudo -u postgres pg_dump --clean --create -F p $DATABASE | \
