@@ -43,6 +43,8 @@ for DATABASE in $BACKUP_DATABASES; do
     then
         BACKUP_STATUS=1
 
+        echo "There was a problem during the backup process."
+
         continue
     fi
 
@@ -58,6 +60,8 @@ for DATABASE in $BACKUP_DATABASES; do
     if [[ $? -gt 0 ]];
     then
         BACKUP_STATUS=1
+
+        echo "There was a problem during the backup process, when fetching the archive size."
 
         continue
     fi
@@ -79,4 +83,4 @@ curl -s --request POST \
     --data-urlencode "started_at=$SCRIPT_STARTED_AT" \
     --data-urlencode "uuid=$BACKUP_UUID"
 
-exit 0
+exit $BACKUP_STATUS
