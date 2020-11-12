@@ -14,7 +14,7 @@ for DATABASE in $BACKUP_DATABASES; do
 
     if [[ $SERVER_DATABASE_DRIVER == 'mysql' ]]
     then
-        mysqldump \
+        STATUS=mysqldump \
             --user=root \
             --password=$SERVER_DATABASE_PASSWORD \
             --single-transaction \
@@ -30,7 +30,7 @@ for DATABASE in $BACKUP_DATABASES; do
 
         cd /tmp
 
-        sudo -u postgres pg_dump --clean --create -F p $DATABASE | \
+        STATUS=sudo -u postgres pg_dump --clean --create -F p $DATABASE | \
         gzip -c | \
         aws s3 cp - $BACKUP_ARCHIVE_PATH \
             --profile=$BACKUP_AWS_PROFILE_NAME \
@@ -39,9 +39,11 @@ for DATABASE in $BACKUP_DATABASES; do
 
     # Check Exit Code Of Backup
 
-    if [[ $? -gt 0 ]];
+    if [[ $STATUS -gt 0 ]];
     then
-        exit 1
+        BACKUP_STATUS=1
+
+        continue
     fi
 
     # Get The Size Of This File And Store It
@@ -55,7 +57,9 @@ for DATABASE in $BACKUP_DATABASES; do
 
     if [[ $? -gt 0 ]];
     then
-        exit 1
+        BACKUP_STATUS=1
+
+        continue
     fi
 
     BACKUP_ARCHIVES+=($BACKUP_ARCHIVE_NAME $BACKUP_ARCHIVE_SIZE)
@@ -68,7 +72,7 @@ curl -s --request POST \
     --data-urlencode "type=backup" \
     --data-urlencode "backup_token=$BACKUP_TOKEN" \
     --data-urlencode "streamed=true" \
-    --data-urlencode "status=" \
+    --data-urlencode "status=$BACKUP_STATUS" \
     --data-urlencode "backup_configuration_id=$BACKUP_ID" \
     --data-urlencode "archives=$BACKUP_ARCHIVES_JSON" \
     --data-urlencode "archive_path=$BACKUP_FULL_STORAGE_PATH$BACKUP_TIMESTAMP" \
