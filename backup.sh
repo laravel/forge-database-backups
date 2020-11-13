@@ -1,12 +1,27 @@
 #!/bin/sh
 
-set -e
+set -o pipefail
 
 BACKUP_STATUS=0
 BACKUP_TIMESTAMP=$(date +%Y%m%d%H%M%S)
 BACKUP_ARCHIVES=()
 
 echo "Streaming backups to storage..."
+
+function archiveAndUpload() {
+    local input="$([[ -p /dev/stdin ]] && cat -)"
+
+    if [[ -n "$input" ]];
+    then
+        echo $input | gzip -c | aws s3 cp - $BACKUP_ARCHIVE_PATH \
+            --profile=$BACKUP_AWS_PROFILE_NAME \
+            ${BACKUP_AWS_ENDPOINT:+ --endpoint=$BACKUP_AWS_ENDPOINT}
+
+        return 0
+    else
+       return 1
+    fi
+}
 
 for DATABASE in $BACKUP_DATABASES; do
     BACKUP_ARCHIVE_NAME="$DATABASE.sql.gz"
@@ -19,24 +34,20 @@ for DATABASE in $BACKUP_DATABASES; do
             --password=$SERVER_DATABASE_PASSWORD \
             --single-transaction \
             -B \
-            $DATABASE | \
-            gzip -c | \
-            aws s3 cp - $BACKUP_ARCHIVE_PATH \
-            --profile=$BACKUP_AWS_PROFILE_NAME \
-            ${BACKUP_AWS_ENDPOINT:+ --endpoint=$BACKUP_AWS_ENDPOINT}
-        STATUS=$?
+            $DATABASE | archiveAndUpload
+
+        RC=( "${PIPESTATUS[@]}" )
+        STATUS=${RC[0]}
     elif [[ $SERVER_DATABASE_DRIVER == 'pgsql' ]]
     then
         # The postgres user cannot access /root/.backups, so switch to /tmp
 
         cd /tmp
 
-        sudo -u postgres pg_dump --clean --create -F p $DATABASE | \
-        gzip -c | \
-        aws s3 cp - $BACKUP_ARCHIVE_PATH \
-            --profile=$BACKUP_AWS_PROFILE_NAME \
-            ${BACKUP_AWS_ENDPOINT:+ --endpoint=$BACKUP_AWS_ENDPOINT}
-        STATUS=$?
+        sudo -u postgres pg_dump --clean --create -F p $DATABASE | archiveAndUpload
+
+        RC=( "${PIPESTATUS[@]}" )
+        STATUS=${RC[0]}
     fi
 
     # Check Exit Code Of Backup
@@ -45,29 +56,22 @@ for DATABASE in $BACKUP_DATABASES; do
     then
         BACKUP_STATUS=1
 
-        echo "There was a problem during the backup process."
+        echo "There was a problem during the backup process. Exit code: $STATUS"
 
         continue
     fi
 
-    # Get The Size Of This File And Store It
-
-    BACKUP_ARCHIVE_SIZE=$(aws s3 ls $BACKUP_ARCHIVE_PATH \
-        --profile=$BACKUP_AWS_PROFILE_NAME \
-        ${BACKUP_AWS_ENDPOINT:+ --endpoint=$BACKUP_AWS_ENDPOINT} | \
-        awk '{print $3}')
-
-    STATUS=$?
-
-    # Check Exit Code Of Listing
-
-    if [[ $STATUS -gt 0 ]];
+    if [[ $BACKUP_STATUS -eq 0 ]];
     then
-        BACKUP_STATUS=1
+        # Get The Size Of This File And Store It
 
-        echo "There was a problem during the backup process, when fetching the archive size."
+        BACKUP_ARCHIVE_SIZE=$(aws s3 ls $BACKUP_ARCHIVE_PATH \
+            --profile=$BACKUP_AWS_PROFILE_NAME \
+            ${BACKUP_AWS_ENDPOINT:+ --endpoint=$BACKUP_AWS_ENDPOINT} | \
+            awk '{print $3}')
 
-        continue
+        RC=( "${PIPESTATUS[@]}" )
+        STATUS=${RC[0]}
     fi
 
     BACKUP_ARCHIVES+=($BACKUP_ARCHIVE_NAME $BACKUP_ARCHIVE_SIZE)
