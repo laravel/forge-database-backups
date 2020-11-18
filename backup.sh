@@ -1,27 +1,27 @@
 #!/bin/sh
 
-set -o pipefail
+set -eo pipefail
+
+function cleanup()
+{
+    curl -s --request POST \
+    --url "$FORGE_PING_CALLBACK" \
+    --data-urlencode "type=backup" \
+    --data-urlencode "backup_token=$BACKUP_TOKEN" \
+    --data-urlencode "streamed=true" \
+    --data-urlencode "status=1" \
+    --data-urlencode "backup_configuration_id=$BACKUP_ID" \
+    --data-urlencode "started_at=$SCRIPT_STARTED_AT" \
+    --data-urlencode "uuid=$BACKUP_UUID"
+}
+
+trap cleanup EXIT
 
 BACKUP_STATUS=0
 BACKUP_TIMESTAMP=$(date +%Y%m%d%H%M%S)
 BACKUP_ARCHIVES=()
 
 echo "Streaming backups to storage..."
-
-function archiveAndUpload() {
-    local input="$([[ -p /dev/stdin ]] && cat -)"
-
-    if [[ -n "$input" ]];
-    then
-        echo $input | gzip -c | aws s3 cp - $BACKUP_ARCHIVE_PATH \
-            --profile=$BACKUP_AWS_PROFILE_NAME \
-            ${BACKUP_AWS_ENDPOINT:+ --endpoint=$BACKUP_AWS_ENDPOINT}
-
-        return 0
-    else
-       return 1
-    fi
-}
 
 for DATABASE in $BACKUP_DATABASES; do
     BACKUP_ARCHIVE_NAME="$DATABASE.sql.gz"
@@ -34,7 +34,10 @@ for DATABASE in $BACKUP_DATABASES; do
             --password=$SERVER_DATABASE_PASSWORD \
             --single-transaction \
             -B \
-            $DATABASE | archiveAndUpload
+            $DATABASE | \
+            gzip -c | aws s3 cp - $BACKUP_ARCHIVE_PATH \
+            --profile=$BACKUP_AWS_PROFILE_NAME \
+            ${BACKUP_AWS_ENDPOINT:+ --endpoint=$BACKUP_AWS_ENDPOINT}
 
         RC=( "${PIPESTATUS[@]}" )
         STATUS=${RC[0]}
@@ -44,7 +47,10 @@ for DATABASE in $BACKUP_DATABASES; do
 
         cd /tmp
 
-        sudo -u postgres pg_dump --clean --create -F p $DATABASE | archiveAndUpload
+        sudo -u postgres pg_dump --clean --create -F p $DATABASE | \
+            gzip -c | aws s3 cp - $BACKUP_ARCHIVE_PATH \
+            --profile=$BACKUP_AWS_PROFILE_NAME \
+            ${BACKUP_AWS_ENDPOINT:+ --endpoint=$BACKUP_AWS_ENDPOINT}
 
         RC=( "${PIPESTATUS[@]}" )
         STATUS=${RC[0]}
