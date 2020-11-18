@@ -33,7 +33,7 @@ for DATABASE in $BACKUP_DATABASES; do
             --user=root \
             --password=$SERVER_DATABASE_PASSWORD \
             --single-transaction \
-            -B \
+            -B 2>&1 \
             $DATABASE | \
             gzip -c | aws s3 cp - $BACKUP_ARCHIVE_PATH \
             --profile=$BACKUP_AWS_PROFILE_NAME \
@@ -47,7 +47,7 @@ for DATABASE in $BACKUP_DATABASES; do
 
         cd /tmp
 
-        sudo -u postgres pg_dump --clean --create -F p $DATABASE | \
+        sudo -u postgres pg_dump --clean --create -F p $DATABASE 2>&1 | \
             gzip -c | aws s3 cp - $BACKUP_ARCHIVE_PATH \
             --profile=$BACKUP_AWS_PROFILE_NAME \
             ${BACKUP_AWS_ENDPOINT:+ --endpoint=$BACKUP_AWS_ENDPOINT}
