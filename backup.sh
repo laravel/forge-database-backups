@@ -8,6 +8,8 @@ BACKUP_ARCHIVE_PATH=""
 BACKUP_ARCHIVES=()
 BACKUP_ARCHIVES_JSON=""
 
+trap 'cleanup $? $LINENO' EXIT
+
 function cleanup()
 {
     echo "Cleaning up backup."
@@ -36,8 +38,6 @@ function cleanup()
         --data-urlencode "started_at=$SCRIPT_STARTED_AT" \
         --data-urlencode "uuid=$BACKUP_UUID"
 }
-
-trap 'cleanup $? $LINENO' EXIT
 
 echo "Streaming backups to storage..."
 
