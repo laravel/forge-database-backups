@@ -2,24 +2,42 @@
 
 set -eo pipefail
 
-function cleanup()
-{
-    curl -s --request POST \
-    --url "$FORGE_PING_CALLBACK" \
-    --data-urlencode "type=backup" \
-    --data-urlencode "backup_token=$BACKUP_TOKEN" \
-    --data-urlencode "streamed=true" \
-    --data-urlencode "status=1" \
-    --data-urlencode "backup_configuration_id=$BACKUP_ID" \
-    --data-urlencode "started_at=$SCRIPT_STARTED_AT" \
-    --data-urlencode "uuid=$BACKUP_UUID"
-}
-
-trap cleanup EXIT
-
 BACKUP_STATUS=0
 BACKUP_TIMESTAMP=$(date +%Y%m%d%H%M%S)
+BACKUP_ARCHIVE_PATH=""
 BACKUP_ARCHIVES=()
+BACKUP_ARCHIVES_JSON=""
+
+function cleanup()
+{
+    echo "Cleaning up backup."
+
+    # Handle Errors
+
+    if [ $1 != 0 ]; then
+        echo "Exit code $1 occurred on line $2"
+        BACKUP_STATUS=1
+    fi
+
+    if [[ ${#BACKUP_ARCHIVES[@]} -gt 0 ]];
+    then
+        BACKUP_ARCHIVES_JSON=$(echo "[$(printf '{\"%s\": %d},' ${BACKUP_ARCHIVES[@]} | sed '$s/,$//')]")
+    fi
+
+    curl -s --request POST \
+        --url "$FORGE_PING_CALLBACK" \
+        --data-urlencode "type=backup" \
+        --data-urlencode "backup_token=$BACKUP_TOKEN" \
+        --data-urlencode "streamed=true" \
+        --data-urlencode "status=$BACKUP_STATUS" \
+        --data-urlencode "backup_configuration_id=$BACKUP_ID" \
+        --data-urlencode "archives=$BACKUP_ARCHIVES_JSON" \
+        --data-urlencode "archive_path=$BACKUP_FULL_STORAGE_PATH$BACKUP_TIMESTAMP" \
+        --data-urlencode "started_at=$SCRIPT_STARTED_AT" \
+        --data-urlencode "uuid=$BACKUP_UUID"
+}
+
+trap 'cleanup $? $LINENO' EXIT
 
 echo "Streaming backups to storage..."
 
@@ -82,19 +100,5 @@ for DATABASE in $BACKUP_DATABASES; do
 
     BACKUP_ARCHIVES+=($BACKUP_ARCHIVE_NAME $BACKUP_ARCHIVE_SIZE)
 done
-
-BACKUP_ARCHIVES_JSON=$(echo "[$(printf '{\"%s\": %d},' ${BACKUP_ARCHIVES[@]} | sed '$s/,$//')]")
-
-curl -s --request POST \
-    --url "$FORGE_PING_CALLBACK" \
-    --data-urlencode "type=backup" \
-    --data-urlencode "backup_token=$BACKUP_TOKEN" \
-    --data-urlencode "streamed=true" \
-    --data-urlencode "status=$BACKUP_STATUS" \
-    --data-urlencode "backup_configuration_id=$BACKUP_ID" \
-    --data-urlencode "archives=$BACKUP_ARCHIVES_JSON" \
-    --data-urlencode "archive_path=$BACKUP_FULL_STORAGE_PATH$BACKUP_TIMESTAMP" \
-    --data-urlencode "started_at=$SCRIPT_STARTED_AT" \
-    --data-urlencode "uuid=$BACKUP_UUID"
 
 exit $BACKUP_STATUS
