@@ -58,11 +58,12 @@ then
         BACKUP_STATUS=1
     fi
 
-    # Remove Backup Archive
-
-    rm -f $BACKUP_ARCHIVE
 else
     echo "Backup archive could not be created..."
 fi
+
+# Remove Backup Archive
+
+rm -f $BACKUP_ARCHIVE
 
 exit $BACKUP_STATUS
