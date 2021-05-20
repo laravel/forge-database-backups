@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 set -eo pipefail
 
@@ -16,24 +16,24 @@ cleanup()
 
     # Handle Errors
 
-    if [ $1 != 0 ]; then
+    if [[ $1 -gt 0 ]]; then
         echo "Exit code $1 occurred on line $2"
         BACKUP_STATUS=1
     fi
 
     if [[ ${#BACKUP_ARCHIVES[@]} -gt 0 ]];
     then
-        BACKUP_ARCHIVES_JSON=$(echo "[$(printf '{\"%s\": %d},' ${BACKUP_ARCHIVES[@]} | sed '$s/,$//')]")
+        BACKUP_ARCHIVES_JSON=$(printf '{\"%s\": %d},' "${BACKUP_ARCHIVES[@]}" | sed '$s/,$//')
     fi
 
-    curl -s --request POST \
+    curl -s -v --request POST \
         --url "$FORGE_PING_CALLBACK" \
         --data-urlencode "type=backup" \
         --data-urlencode "backup_token=$BACKUP_TOKEN" \
         --data-urlencode "streamed=true" \
         --data-urlencode "status=$BACKUP_STATUS" \
         --data-urlencode "backup_configuration_id=$BACKUP_ID" \
-        --data-urlencode "archives=$BACKUP_ARCHIVES_JSON" \
+        --data-urlencode "archives=[$BACKUP_ARCHIVES_JSON]" \
         --data-urlencode "archive_path=$BACKUP_FULL_STORAGE_PATH$BACKUP_TIMESTAMP" \
         --data-urlencode "started_at=$SCRIPT_STARTED_AT" \
         --data-urlencode "uuid=$BACKUP_UUID"
@@ -49,14 +49,14 @@ for DATABASE in $BACKUP_DATABASES; do
     then
         mysqldump \
             --user=root \
-            --password=$SERVER_DATABASE_PASSWORD \
+            --password="$SERVER_DATABASE_PASSWORD" \
             --single-transaction \
             --skip-lock-tables \
             -B \
-            $DATABASE | \
-            gzip -c | aws s3 cp - $BACKUP_ARCHIVE_PATH \
-            --profile=$BACKUP_AWS_PROFILE_NAME \
-            ${BACKUP_AWS_ENDPOINT:+ --endpoint=$BACKUP_AWS_ENDPOINT}
+            "$DATABASE" | \
+            gzip -c | aws s3 cp - "$BACKUP_ARCHIVE_PATH" \
+            --profile="$BACKUP_AWS_PROFILE_NAME" \
+            ${BACKUP_AWS_ENDPOINT:+ --endpoint="$BACKUP_AWS_ENDPOINT"}
 
         RC=( "${PIPESTATUS[@]}" )
         STATUS=${RC[0]}
@@ -66,10 +66,10 @@ for DATABASE in $BACKUP_DATABASES; do
 
         cd /tmp
 
-        sudo -u postgres pg_dump --clean --create -F p $DATABASE | \
-            gzip -c | aws s3 cp - $BACKUP_ARCHIVE_PATH \
-            --profile=$BACKUP_AWS_PROFILE_NAME \
-            ${BACKUP_AWS_ENDPOINT:+ --endpoint=$BACKUP_AWS_ENDPOINT}
+        sudo -u postgres pg_dump --clean --create -F p "$DATABASE" | \
+            gzip -c | aws s3 cp - "$BACKUP_ARCHIVE_PATH" \
+            --profile="$BACKUP_AWS_PROFILE_NAME" \
+            ${BACKUP_AWS_ENDPOINT:+ --endpoint="$BACKUP_AWS_ENDPOINT"}
 
         RC=( "${PIPESTATUS[@]}" )
         STATUS=${RC[0]}
@@ -90,16 +90,16 @@ for DATABASE in $BACKUP_DATABASES; do
     then
         # Get The Size Of This File And Store It
 
-        BACKUP_ARCHIVE_SIZE=$(aws s3 ls $BACKUP_ARCHIVE_PATH \
-            --profile=$BACKUP_AWS_PROFILE_NAME \
-            ${BACKUP_AWS_ENDPOINT:+ --endpoint=$BACKUP_AWS_ENDPOINT} | \
+        BACKUP_ARCHIVE_SIZE=$(aws s3 ls "$BACKUP_ARCHIVE_PATH" \
+            --profile="$BACKUP_AWS_PROFILE_NAME" \
+            ${BACKUP_AWS_ENDPOINT:+ --endpoint="$BACKUP_AWS_ENDPOINT"} | \
             awk '{print $3}')
 
         RC=( "${PIPESTATUS[@]}" )
         STATUS=${RC[0]}
     fi
 
-    BACKUP_ARCHIVES+=($BACKUP_ARCHIVE_NAME $BACKUP_ARCHIVE_SIZE)
+    BACKUP_ARCHIVES+=("$BACKUP_ARCHIVE_NAME" "$BACKUP_ARCHIVE_SIZE")
 done
 
 exit $BACKUP_STATUS
