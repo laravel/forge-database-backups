@@ -10,7 +10,7 @@ BACKUP_ARCHIVES_JSON=""
 
 trap 'cleanup $? $LINENO' EXIT
 
-function cleanup()
+cleanup()
 {
     echo "Cleaning up backup."
 
