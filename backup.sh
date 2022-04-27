@@ -56,7 +56,8 @@ for DATABASE in $BACKUP_DATABASES; do
             $DATABASE | \
             gzip -c | aws s3 cp - $BACKUP_ARCHIVE_PATH \
             --profile=$BACKUP_AWS_PROFILE_NAME \
-            ${BACKUP_AWS_ENDPOINT:+ --endpoint=$BACKUP_AWS_ENDPOINT}
+            ${BACKUP_AWS_ENDPOINT:+ --endpoint=$BACKUP_AWS_ENDPOINT} \
+            ${BACKUP_AWS_ENDPOINT:+ --endpoint-url=$BACKUP_AWS_ENDPOINT}
 
         RC=( "${PIPESTATUS[@]}" )
         STATUS=${RC[0]}
@@ -69,7 +70,8 @@ for DATABASE in $BACKUP_DATABASES; do
         sudo -u postgres pg_dump --clean --create -F p $DATABASE | \
             gzip -c | aws s3 cp - $BACKUP_ARCHIVE_PATH \
             --profile=$BACKUP_AWS_PROFILE_NAME \
-            ${BACKUP_AWS_ENDPOINT:+ --endpoint=$BACKUP_AWS_ENDPOINT}
+            ${BACKUP_AWS_ENDPOINT:+ --endpoint=$BACKUP_AWS_ENDPOINT} \
+            ${BACKUP_AWS_ENDPOINT:+ --endpoint-url=$BACKUP_AWS_ENDPOINT}
 
         RC=( "${PIPESTATUS[@]}" )
         STATUS=${RC[0]}
@@ -92,7 +94,8 @@ for DATABASE in $BACKUP_DATABASES; do
 
         BACKUP_ARCHIVE_SIZE=$(aws s3 ls $BACKUP_ARCHIVE_PATH \
             --profile=$BACKUP_AWS_PROFILE_NAME \
-            ${BACKUP_AWS_ENDPOINT:+ --endpoint=$BACKUP_AWS_ENDPOINT} | \
+            ${BACKUP_AWS_ENDPOINT:+ --endpoint=$BACKUP_AWS_ENDPOINT} \
+            ${BACKUP_AWS_ENDPOINT:+ --endpoint-url=$BACKUP_AWS_ENDPOINT} | \
             awk '{print $3}')
 
         RC=( "${PIPESTATUS[@]}" )
