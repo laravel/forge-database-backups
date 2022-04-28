@@ -34,7 +34,7 @@ cleanup()
         --data-urlencode "status=$BACKUP_STATUS" \
         --data-urlencode "backup_configuration_id=$BACKUP_ID" \
         --data-urlencode "archives=$BACKUP_ARCHIVES_JSON" \
-        --data-urlencode "archive_path=$BACKUP_FULL_STORAGE_PATH$BACKUP_TIMESTAMP" \
+        --data-urlencode "archive_path=$BACKUP_FULL_STORAGE_PATH$BACKUP_TIMESTAMP$BACKUP_NAME" \
         --data-urlencode "started_at=$SCRIPT_STARTED_AT" \
         --data-urlencode "uuid=$BACKUP_UUID"
 }
@@ -43,7 +43,7 @@ echo "Streaming backups to storage..."
 
 for DATABASE in $BACKUP_DATABASES; do
     BACKUP_ARCHIVE_NAME="$DATABASE.sql.gz"
-    BACKUP_ARCHIVE_PATH="$BACKUP_FULL_STORAGE_PATH$BACKUP_TIMESTAMP/$BACKUP_ARCHIVE_NAME"
+    BACKUP_ARCHIVE_PATH="$BACKUP_FULL_STORAGE_PATH$BACKUP_TIMESTAMP$BACKUP_NAME/$BACKUP_ARCHIVE_NAME"
 
     if [[ $SERVER_DATABASE_DRIVER == 'mysql' ]]
     then
