@@ -54,7 +54,7 @@ for DATABASE in $BACKUP_DATABASES; do
             --skip-lock-tables \
             -B \
             $DATABASE | \
-            gzip -c | aws s3 cp - $BACKUP_ARCHIVE_PATH \
+            gzip -c | aws s3 cp - "$BACKUP_ARCHIVE_PATH" \
             --profile=$BACKUP_AWS_PROFILE_NAME \
             ${BACKUP_AWS_ENDPOINT:+ --endpoint=$BACKUP_AWS_ENDPOINT} \
             ${BACKUP_AWS_ENDPOINT:+ --endpoint-url=$BACKUP_AWS_ENDPOINT}
@@ -68,7 +68,7 @@ for DATABASE in $BACKUP_DATABASES; do
         cd /tmp
 
         sudo -u postgres pg_dump --clean --create -F p $DATABASE | \
-            gzip -c | aws s3 cp - $BACKUP_ARCHIVE_PATH \
+            gzip -c | aws s3 cp - "$BACKUP_ARCHIVE_PATH" \
             --profile=$BACKUP_AWS_PROFILE_NAME \
             ${BACKUP_AWS_ENDPOINT:+ --endpoint=$BACKUP_AWS_ENDPOINT} \
             ${BACKUP_AWS_ENDPOINT:+ --endpoint-url=$BACKUP_AWS_ENDPOINT}
@@ -92,7 +92,7 @@ for DATABASE in $BACKUP_DATABASES; do
     then
         # Get The Size Of This File And Store It
 
-        BACKUP_ARCHIVE_SIZE=$(aws s3 ls $BACKUP_ARCHIVE_PATH \
+        BACKUP_ARCHIVE_SIZE=$(aws s3 ls "$BACKUP_ARCHIVE_PATH" \
             --profile=$BACKUP_AWS_PROFILE_NAME \
             ${BACKUP_AWS_ENDPOINT:+ --endpoint=$BACKUP_AWS_ENDPOINT} \
             ${BACKUP_AWS_ENDPOINT:+ --endpoint-url=$BACKUP_AWS_ENDPOINT} | \
