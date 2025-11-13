@@ -63,6 +63,24 @@ for DATABASE in $BACKUP_DATABASES; do
 
         RC=( "${PIPESTATUS[@]}" )
         STATUS=${RC[0]}
+    elif [[ $SERVER_DATABASE_DRIVER == 'mariadb' ]]
+    then
+        mariadb-dump \
+            --user=root \
+            --password=$SERVER_DATABASE_PASSWORD \
+            --single-transaction \
+            --skip-lock-tables \
+            --routines \
+            --hex-blob \
+            -B \
+            $DATABASE | \
+            gzip -c | aws s3 cp - "$BACKUP_ARCHIVE_PATH" \
+            --profile=$BACKUP_AWS_PROFILE_NAME \
+            ${BACKUP_AWS_ENDPOINT:+ --endpoint=$BACKUP_AWS_ENDPOINT} \
+            ${BACKUP_AWS_ENDPOINT:+ --endpoint-url=$BACKUP_AWS_ENDPOINT}
+
+        RC=( "${PIPESTATUS[@]}" )
+        STATUS=${RC[0]}
     elif [[ $SERVER_DATABASE_DRIVER == 'pgsql' ]]
     then
         # The postgres user cannot access /root/.backups, so switch to /tmp
